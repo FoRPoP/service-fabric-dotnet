@@ -32,8 +32,10 @@ namespace Microsoft.ServiceFabric.Client.Http
         readonly SemaphoreSlim refreshSecurityLockObj = new SemaphoreSlim(1, 1);
         readonly Random rand = new Random();
         readonly TimeSpan maxRetryInterval = TimeSpan.FromSeconds(2);
+        readonly AsyncLocal<OperationDeadline> operationDeadline = new();
         SecurityType securityType = SecurityType.None;
         HttpClient httpClient = null;
+        HttpClient operationHttpClient;
         HttpClientHandler innerHandler;
         HttpClientHandlerWrapper httpClientHandlerWrapper;
         bool disposed = false;
@@ -132,6 +134,7 @@ namespace Microsoft.ServiceFabric.Client.Http
             {
                 if (disposing)
                 {
+                    operationHttpClient.Dispose();
                     httpClient.Dispose();
                     httpClient = null;
                 }
@@ -145,6 +148,23 @@ namespace Microsoft.ServiceFabric.Client.Http
             var obj = new ServiceFabricHttpClient(builder);
             await obj.InitializeAsync(cancellationToken);
             return obj;
+        }
+
+        internal async Task<T> RunWithTimeout<T>(long seconds, Func<CancellationToken, Task<T>> operation, CancellationToken cancellationToken)
+        {
+            using OperationDeadline deadline = new(seconds, cancellationToken);
+            OperationDeadline previous = operationDeadline.Value;
+            operationDeadline.Value = deadline;
+            try
+            {
+                deadline.Token.ThrowIfCancellationRequested();
+                T result = await operation(deadline.Token).ConfigureAwait(false);
+                return result;
+            }
+            finally
+            {
+                operationDeadline.Value = previous;
+            }
         }
 
         internal async Task SendAsync(Func<HttpRequestMessage> requestFunc, string relativeUri, string requestId, CancellationToken cancellationToken)
@@ -254,7 +274,7 @@ namespace Microsoft.ServiceFabric.Client.Http
             HttpRequestMessage FinalRequestFunc()
             {
                 HttpRequestMessage request = requestFunc.Invoke();
-                request.RequestUri = requestUri;
+                request.RequestUri = operationDeadline.Value?.ApplyTo(requestUri) ?? requestUri;
 
                 // Add claims token to request if needed.
                 bearerTokenHandler.AddTokenToRequest(request);
@@ -307,6 +327,8 @@ namespace Microsoft.ServiceFabric.Client.Http
 
         async Task<HttpResponseMessage> SendAsyncHandleSecurityExceptions(Func<HttpRequestMessage> requestFunc, string clientRequestId, CancellationToken cancellationToken)
         {
+            OperationDeadline deadline = operationDeadline.Value;
+            cancellationToken = deadline?.Token ?? cancellationToken;
             // Sends request, if Exception is thrown because Server Cert is not validated OR its Forbidden because of invalid client creds,
             // refreshes security settings by calling the func and retires request one more time. If it fails again Exception is thrown.
             var tryCount = 1;
@@ -325,7 +347,7 @@ namespace Microsoft.ServiceFabric.Client.Http
                     // Get the request using the Func as same request cannot be resent.
                     HttpRequestMessage request = requestFunc.Invoke();
                     ServiceFabricHttpClientEventSource.Current.Send($"{clientRequestId}", $"{request.Method.Method} Request Url: {request.RequestUri}");
-                    response = await httpClient.SendAsync(request, cancellationToken);
+                    response = await (deadline == null ? httpClient : operationHttpClient).SendAsync(request, cancellationToken);
                 }
                 catch (AuthenticationException ex)
                 {
@@ -498,6 +520,8 @@ namespace Microsoft.ServiceFabric.Client.Http
             if (ClientSettings?.ClientTimeout != null)
                 httpClientInstance.Timeout = (TimeSpan)ClientSettings.ClientTimeout;
 
+            operationHttpClient = new HttpClient(pipeline, false) { Timeout = Timeout.InfiniteTimeSpan };
+            operationHttpClient.DefaultRequestHeaders.ExpectContinue = true;
             return httpClientInstance;
         }
 

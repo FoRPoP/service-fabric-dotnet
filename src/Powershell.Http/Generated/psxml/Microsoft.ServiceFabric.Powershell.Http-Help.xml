@@ -21538,4 +21538,324 @@
             </command:parameter>
             </command:parameters>
     </command:command>
+
+<command:command xmlns:maml="http://schemas.microsoft.com/maml/2004/10" xmlns:command="http://schemas.microsoft.com/maml/dev/command/2004/10" xmlns:dev="http://schemas.microsoft.com/maml/dev/2004/10" xmlns:MSHelp="http://msdn.microsoft.com/mshelp">
+  <command:details>
+    <command:name>Get-SFCodePackagePatch</command:name>
+    <command:verb>Get</command:verb>
+    <command:noun>CodePackagePatch</command:noun>
+    <maml:description>
+      <maml:para>Gets node-local code package patch mappings and process observations.</maml:para>
+    </maml:description>
+  </command:details>
+  <command:syntax></command:syntax>
+  <maml:description>
+    <maml:para>A read-only query with optional target and node filters in the request URL. There is no request body.
+                Requires normal query access and remains available when EnableHotPatching is disabled. It does not apply, clear, cancel, or retry a patch.
+                Without target filters, lists retained mappings, including dormant, different-version, clearing, and cleared records. A reachable node with no mappings is reported explicitly, not omitted as if it were unreachable. Use an unfiltered query to find saved mappings when the original service no longer exists.
+                PatchId, ServiceName, CodePackageName, CodePackageVersion, and PartitionId are independently optional exact-match filters combined with AND. PatchId identifies a stable version-qualified target. ServiceName restricts results to the package scope resolved from that service. CodePackageName can be used alone to find matching package names across applications. PartitionId restricts results to mappings recorded for that partition; it does not include package-wide mappings without a partition scope.
+                Nodes selects which nodes receive the query, rather than hiding failed or unanswered nodes from the response. Each reachable node returns its matching retained records or an empty Patches list when none match. A missing current replica is not itself an error. No caller-supplied target or revision preparation is required.
+                Saved acceptance is separate from content readiness and effective process selection. DifferentCodePackageVersion explains why an Active mapping is not running; it is not an error. Each process reports its declared code package version and effective replacement ContentId where present. ReplacementRunning does not establish application health. A response cannot prove the outcome of an earlier request that has not yet arrived, and missing records or traces do not prove that a node was never patched.
+                FailedNodes and UnresolvedNodes carry no inferred mapping or process state. Results describe the selected nodes at their individual query times, not a cluster-wide atomic snapshot. Use target filters and an explicit node list to limit the query scope.
+                </maml:para>
+  </maml:description>
+  <command:parameters>
+    <command:parameter required="false" position="0">
+      <maml:name>PatchId</maml:name>
+      <maml:Description>
+        <maml:para>
+                    Optional stable target identifier returned by Set or Get. Restricts results to that version-qualified target without requiring a service or package lookup.
+                    </maml:para>
+      </maml:Description>
+      <command:parameterValue required="false">string</command:parameterValue>
+      <dev:type>
+        <maml:name>string</maml:name>
+      </dev:type>
+    </command:parameter>
+    <command:parameter required="false" position="1">
+      <maml:name>ServiceName</maml:name>
+      <maml:Description>
+        <maml:para>
+                    The name of a service.
+                    </maml:para>
+      </maml:Description>
+      <command:parameterValue required="false">string</command:parameterValue>
+      <dev:type>
+        <maml:name>string</maml:name>
+      </dev:type>
+    </command:parameter>
+    <command:parameter required="false" position="2">
+      <maml:name>CodePackageName</maml:name>
+      <maml:Description>
+        <maml:para>
+                    The name of code package specified in service manifest registered as part of an application type in a Service Fabric cluster.
+                    </maml:para>
+      </maml:Description>
+      <command:parameterValue required="false">string</command:parameterValue>
+      <dev:type>
+        <maml:name>string</maml:name>
+      </dev:type>
+    </command:parameter>
+    <command:parameter required="false" position="3">
+      <maml:name>CodePackageVersion</maml:name>
+      <maml:Description>
+        <maml:para>
+                    Optional declared service-manifest code package version. Can be used independently or combined with the other exact-match filters.
+                    </maml:para>
+      </maml:Description>
+      <command:parameterValue required="false">string</command:parameterValue>
+      <dev:type>
+        <maml:name>string</maml:name>
+      </dev:type>
+    </command:parameter>
+    <command:parameter required="false" position="4">
+      <maml:name>PartitionId</maml:name>
+      <maml:Description>
+        <maml:para>
+                    The identity of the partition.
+                    </maml:para>
+      </maml:Description>
+      <command:parameterValue required="false">PartitionId</command:parameterValue>
+      <dev:type>
+        <maml:name>PartitionId</maml:name>
+      </dev:type>
+    </command:parameter>
+    <command:parameter required="false" position="5">
+      <maml:name>Nodes</maml:name>
+      <maml:Description>
+        <maml:para>
+                    Optional comma-separated node names in one query parameter, for example N1,N2. Use CSV double quotes around a name containing a comma or double quote, doubling an embedded double quote. Supply the raw CSV value to the SDK or PowerShell, which URL-encode it automatically. Raw REST callers must URL-encode the complete CSV value.
+                    Omission targets all currently-up nodes once for this call. Empty entries are invalid and duplicate names are removed. Do not repeat the Nodes parameter; the gateway retains only the first occurrence.
+
+                    </maml:para>
+      </maml:Description>
+      <command:parameterValue required="false">string</command:parameterValue>
+      <dev:type>
+        <maml:name>string</maml:name>
+      </dev:type>
+    </command:parameter>
+    <command:parameter required="false" position="6">
+      <maml:name>ServerTimeout</maml:name>
+      <maml:Description>
+        <maml:para>
+                    The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds.
+                    </maml:para>
+      </maml:Description>
+      <command:parameterValue required="false">long?</command:parameterValue>
+      <dev:type>
+        <maml:name>long?</maml:name>
+      </dev:type>
+    </command:parameter>
+  </command:parameters>
+</command:command>
+<command:command xmlns:command="http://schemas.microsoft.com/maml/dev/command/2004/10" xmlns:maml="http://schemas.microsoft.com/maml/2004/10" xmlns:dev="http://schemas.microsoft.com/maml/dev/2004/10">
+  <command:details>
+    <command:name>Set-SFCodePackagePatch</command:name>
+    <command:verb>Set</command:verb>
+    <command:noun>CodePackagePatch</command:noun>
+    <maml:description>
+      <maml:para>Publishes replacement code and accepts a version-qualified patch mapping on selected nodes.</maml:para>
+    </maml:description>
+  </command:details>
+  <maml:description>
+    <maml:para>Success means saved intent, not completed process work. ServerTimeout bounds the whole operation, including local preparation and upload for Set. These commands use that deadline independently of the connection timeout. Content is retained independently of the mapping.</maml:para>
+  </maml:description>
+  <command:syntax>
+    <command:syntaxItem>
+      <maml:name>Set-SFCodePackagePatch</maml:name>
+      <command:parameter required="true">
+        <maml:name>ServiceName</maml:name>
+        <command:parameterValue>ServiceName</command:parameterValue>
+      </command:parameter>
+      <command:parameter required="true">
+        <maml:name>CodePackageName</maml:name>
+        <command:parameterValue>String</command:parameterValue>
+      </command:parameter>
+      <command:parameter required="true">
+        <maml:name>CodePackageVersion</maml:name>
+        <command:parameterValue>String</command:parameterValue>
+      </command:parameter>
+      <command:parameter required="true">
+        <maml:name>Source</maml:name>
+        <command:parameterValue>CodePackagePatchSource</command:parameterValue>
+      </command:parameter>
+      <command:parameter required="false">
+        <maml:name>PartitionId</maml:name>
+        <command:parameterValue>PartitionId</command:parameterValue>
+      </command:parameter>
+      <command:parameter required="false">
+        <maml:name>ContentName</maml:name>
+        <command:parameterValue>String</command:parameterValue>
+      </command:parameter>
+      <command:parameter required="false">
+        <maml:name>Nodes</maml:name>
+        <command:parameterValue>String[]</command:parameterValue>
+      </command:parameter>
+      <command:parameter required="false">
+        <maml:name>ServerTimeout</maml:name>
+        <command:parameterValue>Int64</command:parameterValue>
+      </command:parameter>
+    </command:syntaxItem>
+  </command:syntax>
+  <command:parameters>
+    <command:parameter required="true">
+      <maml:name>ServiceName</maml:name>
+      <maml:description>
+        <maml:para>Gets or sets the service used to identify the target application instance and package.</maml:para>
+      </maml:description>
+      <command:parameterValue>ServiceName</command:parameterValue>
+      <dev:type>
+        <maml:name>ServiceName</maml:name>
+      </dev:type>
+    </command:parameter>
+    <command:parameter required="true">
+      <maml:name>CodePackageName</maml:name>
+      <maml:description>
+        <maml:para>Gets or sets the original code package name, independently of the replacement source.</maml:para>
+      </maml:description>
+      <command:parameterValue>String</command:parameterValue>
+      <dev:type>
+        <maml:name>String</maml:name>
+      </dev:type>
+    </command:parameter>
+    <command:parameter required="true">
+      <maml:name>CodePackageVersion</maml:name>
+      <maml:description>
+        <maml:para>Gets or sets the declared service-manifest code package version, not an application or rollout version.</maml:para>
+      </maml:description>
+      <command:parameterValue>String</command:parameterValue>
+      <dev:type>
+        <maml:name>String</maml:name>
+      </dev:type>
+    </command:parameter>
+    <command:parameter required="true">
+      <maml:name>Source</maml:name>
+      <maml:description>
+        <maml:para>Gets or sets the typed replacement source.
+            Local directories upload directly to retained HotPatches content and must stay unchanged during upload.
+            Stored and provisioned sources are passed by reference.</maml:para>
+      </maml:description>
+      <command:parameterValue>CodePackagePatchSource</command:parameterValue>
+      <dev:type>
+        <maml:name>CodePackagePatchSource</maml:name>
+      </dev:type>
+    </command:parameter>
+    <command:parameter required="false">
+      <maml:name>PartitionId</maml:name>
+      <maml:description>
+        <maml:para>Gets or sets one exclusive-process partition to target. Omit for package-wide scope.</maml:para>
+      </maml:description>
+      <command:parameterValue>PartitionId</command:parameterValue>
+      <dev:type>
+        <maml:name>PartitionId</maml:name>
+      </dev:type>
+    </command:parameter>
+    <command:parameter required="false">
+      <maml:name>ContentName</maml:name>
+      <maml:description>
+        <maml:para>Gets or sets the prefix for a new publication's identifier without renaming a reused publication.</maml:para>
+      </maml:description>
+      <command:parameterValue>String</command:parameterValue>
+      <dev:type>
+        <maml:name>String</maml:name>
+      </dev:type>
+    </command:parameter>
+    <command:parameter required="false">
+      <maml:name>Nodes</maml:name>
+      <maml:description>
+        <maml:para>Gets or sets recipient nodes. Omit to target the nodes currently up; an empty list is invalid.</maml:para>
+      </maml:description>
+      <command:parameterValue>String[]</command:parameterValue>
+      <dev:type>
+        <maml:name>String[]</maml:name>
+      </dev:type>
+    </command:parameter>
+    <command:parameter required="false">
+      <maml:name>ServerTimeout</maml:name>
+      <maml:description>
+        <maml:para>Gets or sets the submission limit in seconds. The default is 1800; expiry does not cancel accepted work.</maml:para>
+      </maml:description>
+      <command:parameterValue>Int64</command:parameterValue>
+      <dev:type>
+        <maml:name>Int64</maml:name>
+      </dev:type>
+    </command:parameter>
+  </command:parameters>
+  <command:returnValues>
+    <command:returnValue>
+      <dev:type>
+        <maml:name>CodePackagePatchResult</maml:name>
+      </dev:type>
+    </command:returnValue>
+  </command:returnValues>
+</command:command>
+<command:command xmlns:command="http://schemas.microsoft.com/maml/dev/command/2004/10" xmlns:maml="http://schemas.microsoft.com/maml/2004/10" xmlns:dev="http://schemas.microsoft.com/maml/dev/2004/10">
+  <command:details>
+    <command:name>Clear-SFCodePackagePatch</command:name>
+    <command:verb>Clear</command:verb>
+    <command:noun>CodePackagePatch</command:noun>
+    <maml:description>
+      <maml:para>Removes the current mapping at a version-qualified target without deleting published content.</maml:para>
+    </maml:description>
+  </command:details>
+  <maml:description>
+    <maml:para>Success means saved intent, not completed process work. ServerTimeout bounds the whole operation, including local preparation and upload for Set. These commands use that deadline independently of the connection timeout. Content is retained independently of the mapping.</maml:para>
+  </maml:description>
+  <command:syntax>
+    <command:syntaxItem>
+      <maml:name>Clear-SFCodePackagePatch</maml:name>
+      <command:parameter required="true">
+        <maml:name>PatchId</maml:name>
+        <command:parameterValue>String</command:parameterValue>
+      </command:parameter>
+      <command:parameter required="false">
+        <maml:name>Nodes</maml:name>
+        <command:parameterValue>String[]</command:parameterValue>
+      </command:parameter>
+      <command:parameter required="false">
+        <maml:name>ServerTimeout</maml:name>
+        <command:parameterValue>Int64</command:parameterValue>
+      </command:parameter>
+    </command:syntaxItem>
+  </command:syntax>
+  <command:parameters>
+    <command:parameter required="true">
+      <maml:name>PatchId</maml:name>
+      <maml:description>
+        <maml:para>Gets or sets the target returned by Set or Get, including after its original service is deleted.</maml:para>
+      </maml:description>
+      <command:parameterValue>String</command:parameterValue>
+      <dev:type>
+        <maml:name>String</maml:name>
+      </dev:type>
+    </command:parameter>
+    <command:parameter required="false">
+      <maml:name>Nodes</maml:name>
+      <maml:description>
+        <maml:para>Gets or sets recipient nodes. Removal must eventually reach every accepting or possibly accepting node.</maml:para>
+      </maml:description>
+      <command:parameterValue>String[]</command:parameterValue>
+      <dev:type>
+        <maml:name>String[]</maml:name>
+      </dev:type>
+    </command:parameter>
+    <command:parameter required="false">
+      <maml:name>ServerTimeout</maml:name>
+      <maml:description>
+        <maml:para>Gets or sets the submission limit in seconds. The default is 60; expiry does not cancel accepted work.</maml:para>
+      </maml:description>
+      <command:parameterValue>Int64</command:parameterValue>
+      <dev:type>
+        <maml:name>Int64</maml:name>
+      </dev:type>
+    </command:parameter>
+  </command:parameters>
+  <command:returnValues>
+    <command:returnValue>
+      <dev:type>
+        <maml:name>CodePackagePatchResult</maml:name>
+      </dev:type>
+    </command:returnValue>
+  </command:returnValues>
+</command:command>
 </helpItems>
