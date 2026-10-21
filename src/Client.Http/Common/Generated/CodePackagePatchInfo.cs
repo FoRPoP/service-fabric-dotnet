@@ -20,15 +20,15 @@ namespace Microsoft.ServiceFabric.Common
         /// </summary>
         /// <param name="patchId">The stable identifier of a resolved application instance, service package, code package name
         /// and declared version, and package or partition scope.
-        /// Service Fabric returns a versioned string that identifies the same target across nodes and repeated Set operations.
-        /// Content and revision are not part of this identifier.
-        /// Pass the returned value to Clear without reconstructing the target. Service Fabric can decode it even when a node
+        /// Service Fabric returns a versioned string that identifies the same target across nodes and repeated Create
+        /// operations. Content and revision are not part of this identifier.
+        /// Pass the returned value to Delete without reconstructing the target. Service Fabric can decode it even when a node
         /// has no saved mapping or the original service no longer exists.
         /// </param>
         /// <param name="target">The immutable application instance, declared code package version, and scope resolved by
         /// Service Fabric.
-        /// Use the values returned by GetCodePackagePatchList. The application instance ID is not the encoded application-name
-        /// ID used in REST resource paths.
+        /// Use the values returned by GetCodePackagePatchInfoList. The application instance ID is not the encoded
+        /// application-name ID used in REST resource paths.
         /// Omitting PartitionId identifies the package-wide mapping. Including PartitionId identifies only that partition's
         /// mapping.
         /// </param>
@@ -84,17 +84,17 @@ namespace Microsoft.ServiceFabric.Common
         /// <summary>
         /// Gets the stable identifier of a resolved application instance, service package, code package name and declared
         /// version, and package or partition scope.
-        /// Service Fabric returns a versioned string that identifies the same target across nodes and repeated Set operations.
-        /// Content and revision are not part of this identifier.
-        /// Pass the returned value to Clear without reconstructing the target. Service Fabric can decode it even when a node
+        /// Service Fabric returns a versioned string that identifies the same target across nodes and repeated Create
+        /// operations. Content and revision are not part of this identifier.
+        /// Pass the returned value to Delete without reconstructing the target. Service Fabric can decode it even when a node
         /// has no saved mapping or the original service no longer exists.
         /// </summary>
         public string PatchId { get; }
 
         /// <summary>
         /// Gets the immutable application instance, declared code package version, and scope resolved by Service Fabric.
-        /// Use the values returned by GetCodePackagePatchList. The application instance ID is not the encoded application-name
-        /// ID used in REST resource paths.
+        /// Use the values returned by GetCodePackagePatchInfoList. The application instance ID is not the encoded
+        /// application-name ID used in REST resource paths.
         /// Omitting PartitionId identifies the package-wide mapping. Including PartitionId identifies only that partition's
         /// mapping.
         /// </summary>

@@ -17,7 +17,7 @@ namespace Microsoft.ServiceFabric.Common
         /// Initializes a new instance of the CodePackagePatchNodeInfo class.
         /// </summary>
         /// <param name="nodeName">The name of a Service Fabric node.</param>
-        /// <param name="patches">Set returns one accepted mapping. Clear returns the saved removal observation for its
+        /// <param name="patches">Create returns one accepted mapping. Delete returns the saved removal observation for its
         /// version-qualified target, including a first-mention revision marker when no mapping existed.
         /// Get returns every retained mapping matching the supplied filters on this node. An empty list explicitly identifies
         /// a successful response with no matching mappings and is distinct from an unanswered query.
@@ -38,7 +38,7 @@ namespace Microsoft.ServiceFabric.Common
         public NodeName NodeName { get; }
 
         /// <summary>
-        /// Gets set returns one accepted mapping. Clear returns the saved removal observation for its version-qualified
+        /// Gets create returns one accepted mapping. Delete returns the saved removal observation for its version-qualified
         /// target, including a first-mention revision marker when no mapping existed.
         /// Get returns every retained mapping matching the supplied filters on this node. An empty list explicitly identifies
         /// a successful response with no matching mappings and is distinct from an unanswered query.

@@ -12,16 +12,16 @@ namespace Microsoft.ServiceFabric.Client.Http.Serialization
     using Newtonsoft.Json.Linq;
 
     /// <summary>
-    /// Converter for <see cref="CodePackagePatchSetDescription" />.
+    /// Converter for <see cref="CodePackagePatchCreateDescription" />.
     /// </summary>
-    internal class CodePackagePatchSetDescriptionConverter
+    internal class CodePackagePatchCreateDescriptionConverter
     {
         /// <summary>
         /// Deserializes the JSON representation of the object.
         /// </summary>
         /// <param name="reader">The <see cref="T: Newtonsoft.Json.JsonReader" /> to read from.</param>
         /// <returns>The object Value.</returns>
-        internal static CodePackagePatchSetDescription Deserialize(JsonReader reader)
+        internal static CodePackagePatchCreateDescription Deserialize(JsonReader reader)
         {
             return reader.Deserialize(GetFromJsonProperties);
         }
@@ -31,7 +31,7 @@ namespace Microsoft.ServiceFabric.Client.Http.Serialization
         /// </summary>
         /// <param name="reader">The <see cref="T: Newtonsoft.Json.JsonReader" /> to read from, reader must be placed at first property.</param>
         /// <returns>The object Value.</returns>
-        internal static CodePackagePatchSetDescription GetFromJsonProperties(JsonReader reader)
+        internal static CodePackagePatchCreateDescription GetFromJsonProperties(JsonReader reader)
         {
             var serviceName = default(ServiceName);
             var codePackageName = default(string);
@@ -79,7 +79,7 @@ namespace Microsoft.ServiceFabric.Client.Http.Serialization
             }
             while (reader.TokenType != JsonToken.EndObject);
 
-            return new CodePackagePatchSetDescription(
+            return new CodePackagePatchCreateDescription(
                 serviceName: serviceName,
                 codePackageName: codePackageName,
                 codePackageVersion: codePackageVersion,
@@ -94,7 +94,7 @@ namespace Microsoft.ServiceFabric.Client.Http.Serialization
         /// </summary>
         /// <param name="writer">The <see cref="T: Newtonsoft.Json.JsonWriter" /> to write to.</param>
         /// <param name="obj">The object to serialize to JSON.</param>
-        internal static void Serialize(JsonWriter writer, CodePackagePatchSetDescription obj)
+        internal static void Serialize(JsonWriter writer, CodePackagePatchCreateDescription obj)
         {
             // Required properties are always serialized, optional properties are serialized when not null.
             writer.WriteStartObject();

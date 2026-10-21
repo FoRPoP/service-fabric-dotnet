@@ -24,23 +24,23 @@ namespace Microsoft.ServiceFabric.Common
         /// <param name="applicationTypeVersion">The registered application-type version containing the replacement source, not
         /// the original CodePackageVersion being patched.</param>
         /// <param name="serviceManifestName">The name of the service manifest.</param>
-        /// <param name="codePackageName">The name of the code package defined in the service manifest.</param>
+        /// <param name="sourceCodePackageName">The name of the code package defined in the service manifest.</param>
         public ProvisionedCodePackagePatchSource(
             string applicationTypeName,
             string applicationTypeVersion,
             string serviceManifestName,
-            string codePackageName)
+            string sourceCodePackageName)
             : base(
                 Common.CodePackagePatchSourceKind.ProvisionedCodePackage)
         {
             applicationTypeName.ThrowIfNull(nameof(applicationTypeName));
             applicationTypeVersion.ThrowIfNull(nameof(applicationTypeVersion));
             serviceManifestName.ThrowIfNull(nameof(serviceManifestName));
-            codePackageName.ThrowIfNull(nameof(codePackageName));
+            sourceCodePackageName.ThrowIfNull(nameof(sourceCodePackageName));
             this.ApplicationTypeName = applicationTypeName;
             this.ApplicationTypeVersion = applicationTypeVersion;
             this.ServiceManifestName = serviceManifestName;
-            this.CodePackageName = codePackageName;
+            this.SourceCodePackageName = sourceCodePackageName;
         }
 
         /// <summary>
@@ -62,6 +62,6 @@ namespace Microsoft.ServiceFabric.Common
         /// <summary>
         /// Gets the name of the code package defined in the service manifest.
         /// </summary>
-        public string CodePackageName { get; }
+        public string SourceCodePackageName { get; }
     }
 }

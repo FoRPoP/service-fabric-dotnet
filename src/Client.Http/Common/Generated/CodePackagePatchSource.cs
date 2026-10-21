@@ -10,10 +10,9 @@ namespace Microsoft.ServiceFabric.Common
 
     /// <summary>
     /// One complete replacement code package, not a set of platform variants or a changed-file delta.
-    /// Client-side preparation uploads a local directory using existing Image Store operations before submitting the
-    /// logical Set operation. No separate user-issued upload command is required by the SDK or PowerShell command. This
-    /// HTTP source object identifies stored or provisioned contents; it does not carry a caller-local path or inline file
-    /// bytes.
+    /// This source object identifies stored or provisioned contents; it does not carry a caller-local path or inline file
+    /// bytes. Upload a local directory using existing Image Store operations before submitting Create with the resulting
+    /// Image Store-relative path.
     /// Service Fabric obtains or computes the replacement checksum during preparation using its normal package validation
     /// policy and retains it for node downloads. The caller does not supply a checksum.
     /// Service Fabric does not select different binaries for different nodes or certify that arbitrary replacement code is

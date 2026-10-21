@@ -26,7 +26,7 @@ namespace Microsoft.ServiceFabric.Common
         /// <param name="partitionIds">The partitions associated with this activation. A shared host can contain more than one
         /// partition.</param>
         /// <param name="effectiveCodePath">The node-local code directory selected for this activation. This is an observation,
-        /// not an accepted source path for Set.</param>
+        /// not an accepted source path for Create.</param>
         /// <param name="effectiveContentId">The immutable replacement publication selected for this activation. Absent when
         /// canonical deployed code is selected. This can differ from the saved mapping's ContentId while a switch is pending
         /// or another mapping takes precedence.</param>
@@ -74,7 +74,7 @@ namespace Microsoft.ServiceFabric.Common
 
         /// <summary>
         /// Gets the node-local code directory selected for this activation. This is an observation, not an accepted source
-        /// path for Set.
+        /// path for Create.
         /// </summary>
         public string EffectiveCodePath { get; }
 

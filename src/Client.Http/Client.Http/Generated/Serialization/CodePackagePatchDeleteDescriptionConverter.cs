@@ -12,16 +12,16 @@ namespace Microsoft.ServiceFabric.Client.Http.Serialization
     using Newtonsoft.Json.Linq;
 
     /// <summary>
-    /// Converter for <see cref="CodePackagePatchClearDescription" />.
+    /// Converter for <see cref="CodePackagePatchDeleteDescription" />.
     /// </summary>
-    internal class CodePackagePatchClearDescriptionConverter
+    internal class CodePackagePatchDeleteDescriptionConverter
     {
         /// <summary>
         /// Deserializes the JSON representation of the object.
         /// </summary>
         /// <param name="reader">The <see cref="T: Newtonsoft.Json.JsonReader" /> to read from.</param>
         /// <returns>The object Value.</returns>
-        internal static CodePackagePatchClearDescription Deserialize(JsonReader reader)
+        internal static CodePackagePatchDeleteDescription Deserialize(JsonReader reader)
         {
             return reader.Deserialize(GetFromJsonProperties);
         }
@@ -31,19 +31,14 @@ namespace Microsoft.ServiceFabric.Client.Http.Serialization
         /// </summary>
         /// <param name="reader">The <see cref="T: Newtonsoft.Json.JsonReader" /> to read from, reader must be placed at first property.</param>
         /// <returns>The object Value.</returns>
-        internal static CodePackagePatchClearDescription GetFromJsonProperties(JsonReader reader)
+        internal static CodePackagePatchDeleteDescription GetFromJsonProperties(JsonReader reader)
         {
-            var patchId = default(string);
             var nodes = default(IEnumerable<string>);
 
             do
             {
                 var propName = reader.ReadPropertyName();
-                if (string.Compare("PatchId", propName, StringComparison.OrdinalIgnoreCase) == 0)
-                {
-                    patchId = reader.ReadValueAsString();
-                }
-                else if (string.Compare("Nodes", propName, StringComparison.OrdinalIgnoreCase) == 0)
+                if (string.Compare("Nodes", propName, StringComparison.OrdinalIgnoreCase) == 0)
                 {
                     nodes = reader.ReadList(JsonReaderExtensions.ReadValueAsString);
                 }
@@ -54,8 +49,7 @@ namespace Microsoft.ServiceFabric.Client.Http.Serialization
             }
             while (reader.TokenType != JsonToken.EndObject);
 
-            return new CodePackagePatchClearDescription(
-                patchId: patchId,
+            return new CodePackagePatchDeleteDescription(
                 nodes: nodes);
         }
 
@@ -64,11 +58,10 @@ namespace Microsoft.ServiceFabric.Client.Http.Serialization
         /// </summary>
         /// <param name="writer">The <see cref="T: Newtonsoft.Json.JsonWriter" /> to write to.</param>
         /// <param name="obj">The object to serialize to JSON.</param>
-        internal static void Serialize(JsonWriter writer, CodePackagePatchClearDescription obj)
+        internal static void Serialize(JsonWriter writer, CodePackagePatchDeleteDescription obj)
         {
             // Required properties are always serialized, optional properties are serialized when not null.
             writer.WriteStartObject();
-            writer.WriteProperty(obj.PatchId, "PatchId", JsonWriterExtensions.WriteStringValue);
             if (obj.Nodes != null)
             {
                 writer.WriteEnumerableProperty(obj.Nodes, "Nodes", (w, v) => writer.WriteStringValue(v));

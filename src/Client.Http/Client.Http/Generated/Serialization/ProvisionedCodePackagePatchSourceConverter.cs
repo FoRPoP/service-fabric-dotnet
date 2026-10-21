@@ -36,7 +36,7 @@ namespace Microsoft.ServiceFabric.Client.Http.Serialization
             var applicationTypeName = default(string);
             var applicationTypeVersion = default(string);
             var serviceManifestName = default(string);
-            var codePackageName = default(string);
+            var sourceCodePackageName = default(string);
 
             do
             {
@@ -55,7 +55,7 @@ namespace Microsoft.ServiceFabric.Client.Http.Serialization
                 }
                 else if (string.Compare("CodePackageName", propName, StringComparison.OrdinalIgnoreCase) == 0)
                 {
-                    codePackageName = reader.ReadValueAsString();
+                    sourceCodePackageName = reader.ReadValueAsString();
                 }
                 else
                 {
@@ -68,7 +68,7 @@ namespace Microsoft.ServiceFabric.Client.Http.Serialization
                 applicationTypeName: applicationTypeName,
                 applicationTypeVersion: applicationTypeVersion,
                 serviceManifestName: serviceManifestName,
-                codePackageName: codePackageName);
+                sourceCodePackageName: sourceCodePackageName);
         }
 
         /// <summary>
@@ -84,7 +84,7 @@ namespace Microsoft.ServiceFabric.Client.Http.Serialization
             writer.WriteProperty(obj.ApplicationTypeName, "ApplicationTypeName", JsonWriterExtensions.WriteStringValue);
             writer.WriteProperty(obj.ApplicationTypeVersion, "ApplicationTypeVersion", JsonWriterExtensions.WriteStringValue);
             writer.WriteProperty(obj.ServiceManifestName, "ServiceManifestName", JsonWriterExtensions.WriteStringValue);
-            writer.WriteProperty(obj.CodePackageName, "CodePackageName", JsonWriterExtensions.WriteStringValue);
+            writer.WriteProperty(obj.SourceCodePackageName, "CodePackageName", JsonWriterExtensions.WriteStringValue);
             writer.WriteEndObject();
         }
     }

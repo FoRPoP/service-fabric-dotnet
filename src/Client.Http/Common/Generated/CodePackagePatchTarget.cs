@@ -10,8 +10,8 @@ namespace Microsoft.ServiceFabric.Common
 
     /// <summary>
     /// The immutable application instance, declared code package version, and scope resolved by Service Fabric.
-    /// Use the values returned by GetCodePackagePatchList. The application instance ID is not the encoded application-name
-    /// ID used in REST resource paths.
+    /// Use the values returned by GetCodePackagePatchInfoList. The application instance ID is not the encoded
+    /// application-name ID used in REST resource paths.
     /// Omitting PartitionId identifies the package-wide mapping. Including PartitionId identifies only that partition's
     /// mapping.
     /// </summary>

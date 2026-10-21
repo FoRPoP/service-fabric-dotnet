@@ -10,8 +10,8 @@ namespace Microsoft.ServiceFabric.Common
 
     /// <summary>
     /// Independent outcomes for every selected node. Each selected node appears in exactly one collection.
-    /// For Set and Clear, success means durably accepted intent, not completed download or process work. A failure on one
-    /// node does not undo acceptance elsewhere, and an unresolved request may still be accepted later.
+    /// For Create and Delete, success means durably accepted intent, not completed download or process work. A failure on
+    /// one node does not undo acceptance elsewhere, and an unresolved request may still be accepted later.
     /// For Get, success means a conclusive node-local observation. Results are not a cluster-wide atomic snapshot or a
     /// historical audit log.
     /// </summary>
@@ -20,8 +20,8 @@ namespace Microsoft.ServiceFabric.Common
         /// <summary>
         /// Initializes a new instance of the CodePackagePatchResult class.
         /// </summary>
-        /// <param name="successfulNodes">Successful responses, one per node. Set returns its accepted mapping. Clear returns
-        /// the saved removal observation, including a revision marker when the target had no previous mapping.
+        /// <param name="successfulNodes">Successful responses, one per node. Create returns its accepted mapping. Delete
+        /// returns the saved removal observation, including a revision marker when the target had no previous mapping.
         /// Get returns the matching saved mappings, or an empty Patches list for a reachable node with no matches. No outcome
         /// is inferred for unanswered nodes.
         /// </param>
@@ -32,15 +32,16 @@ namespace Microsoft.ServiceFabric.Common
         /// </param>
         /// <param name="unresolvedNodes">Nodes for which no conclusive response was obtained. These are not empty mapping
         /// results, and mutation acceptance may still occur later.</param>
-        /// <param name="patchId">The stable target identifier returned in every Set and Clear response, including partial or
-        /// unresolved outcomes. Clear echoes the requested identifier. Get reports identifiers on its individual mapping
+        /// <param name="patchId">The stable target identifier returned in every Create and Delete response, including partial
+        /// or unresolved outcomes. Delete echoes the requested identifier. Get reports identifiers on its individual mapping
         /// observations instead.</param>
         /// <param name="contentId">The immutable published replacement identifier, independent of PatchId. Present in every
-        /// Set result after successful publication, even if every node rejected the request or has an unresolved outcome. Not
-        /// returned at the root of Clear or Get results.</param>
+        /// Create result after successful publication, even if every node rejected the request or has an unresolved outcome.
+        /// Not returned at the root of Delete or Get results.</param>
         /// <param name="imageStoreRelativePath">The complete retained path under
-        /// Store/{ApplicationType}/HotPatches/{ContentId}. Present in every Set result after successful publication and
-        /// reusable as Source.ImageStoreRelativePath in a later Set. Not returned at the root of Clear or Get results.</param>
+        /// Store/{ApplicationType}/HotPatches/{ContentId}. Present in every Create result after successful publication and
+        /// reusable as Source.ImageStoreRelativePath in a later Create. Not returned at the root of Delete or Get
+        /// results.</param>
         public CodePackagePatchResult(
             IEnumerable<CodePackagePatchNodeInfo> successfulNodes,
             IEnumerable<CodePackagePatchNodeError> failedNodes,
@@ -61,28 +62,28 @@ namespace Microsoft.ServiceFabric.Common
         }
 
         /// <summary>
-        /// Gets the stable target identifier returned in every Set and Clear response, including partial or unresolved
-        /// outcomes. Clear echoes the requested identifier. Get reports identifiers on its individual mapping observations
+        /// Gets the stable target identifier returned in every Create and Delete response, including partial or unresolved
+        /// outcomes. Delete echoes the requested identifier. Get reports identifiers on its individual mapping observations
         /// instead.
         /// </summary>
         public string PatchId { get; }
 
         /// <summary>
-        /// Gets the immutable published replacement identifier, independent of PatchId. Present in every Set result after
+        /// Gets the immutable published replacement identifier, independent of PatchId. Present in every Create result after
         /// successful publication, even if every node rejected the request or has an unresolved outcome. Not returned at the
-        /// root of Clear or Get results.
+        /// root of Delete or Get results.
         /// </summary>
         public string ContentId { get; }
 
         /// <summary>
-        /// Gets the complete retained path under Store/{ApplicationType}/HotPatches/{ContentId}. Present in every Set result
-        /// after successful publication and reusable as Source.ImageStoreRelativePath in a later Set. Not returned at the root
-        /// of Clear or Get results.
+        /// Gets the complete retained path under Store/{ApplicationType}/HotPatches/{ContentId}. Present in every Create
+        /// result after successful publication and reusable as Source.ImageStoreRelativePath in a later Create. Not returned
+        /// at the root of Delete or Get results.
         /// </summary>
         public string ImageStoreRelativePath { get; }
 
         /// <summary>
-        /// Gets successful responses, one per node. Set returns its accepted mapping. Clear returns the saved removal
+        /// Gets successful responses, one per node. Create returns its accepted mapping. Delete returns the saved removal
         /// observation, including a revision marker when the target had no previous mapping.
         /// Get returns the matching saved mappings, or an empty Patches list for a reachable node with no matches. No outcome
         /// is inferred for unanswered nodes.

@@ -21,6 +21,7 @@ namespace Microsoft.ServiceFabric.Client.Http
 {
     sealed partial class ImageStoreClient : IImageStoreClient
     {
+        const int UploadLimitSizeInBytes = 25 * 1024 * 1024;
         const int MaxConcurrentUpload = 10;
         const int MaxUploadTry = 2;
         const string ZipExtension = "zip";
@@ -41,36 +42,26 @@ namespace Microsoft.ServiceFabric.Client.Http
             if (!Directory.Exists(applicationPackagePath))
                 throw new InvalidOperationException($"Application package path {applicationPackagePath} not found.");
 
-            string absPkgPath = Path.GetFullPath(applicationPackagePath);
+            string absPkgPath = FileUtilities.GetAbsolutePath(applicationPackagePath);
 
             if (compressPackage)
                 await CompressApplicationPackage(absPkgPath);
 
             string pkgPathInImageStore = applicationPackagePathInImageStore;
             if (string.IsNullOrEmpty(pkgPathInImageStore))
-                pkgPathInImageStore = new DirectoryInfo(absPkgPath).Name;
+                pkgPathInImageStore = applicationPackagePath.Replace(Path.GetDirectoryName(applicationPackagePath), string.Empty);
 
             pkgPathInImageStore = pkgPathInImageStore.Trim('\\', '/');
 
             await LoadImageStoreConnectionString();
             if (isLocalStore)
             {
-                cancellationToken.ThrowIfCancellationRequested();
-                string targetRoot = Path.Combine(imageStorePath, pkgPathInImageStore);
-                Directory.CreateDirectory(targetRoot);
-                foreach (string directory in Directory.EnumerateDirectories(absPkgPath, "*", SearchOption.AllDirectories))
-                {
-                    cancellationToken.ThrowIfCancellationRequested();
-                    Directory.CreateDirectory(Path.Combine(targetRoot, GetRelativePath(absPkgPath, directory)));
-                }
-
                 IEnumerable<System.IO.FileInfo> files = Directory.EnumerateFiles(absPkgPath, "*", SearchOption.AllDirectories)
                     .Select(file => new System.IO.FileInfo(file));
 
                 foreach (System.IO.FileInfo file in files)
                 {
-                    cancellationToken.ThrowIfCancellationRequested();
-                    string targetPath = Path.Combine(targetRoot, GetRelativePath(absPkgPath, file.FullName));
+                    string targetPath = Path.Combine(imageStorePath, Path.Combine(pkgPathInImageStore, file.FullName.Substring(absPkgPath.Length + 1)));
                     if (!Directory.Exists(Path.GetDirectoryName(targetPath)))
                     {
                         Directory.CreateDirectory(Path.GetDirectoryName(targetPath));
@@ -78,7 +69,6 @@ namespace Microsoft.ServiceFabric.Client.Http
 
                     File.Copy(file.FullName, targetPath, true);
                 }
-                cancellationToken.ThrowIfCancellationRequested();
             }
             else
             {
@@ -98,12 +88,26 @@ namespace Microsoft.ServiceFabric.Client.Http
                     Directory.EnumerateDirectories(absPkgPath, "*", SearchOption.AllDirectories)
                         .Select(dir => GetPathInImageStore(absPkgPath, pkgPathInImageStore, dir)));
 
-                IEnumerable<FileUploadInfo> singleFileUploadInfos = files
+                // Upload small files in single upload. Upload bigger fileInfo using chunked upload.
+                // Get info to upload single files.
+                IEnumerable<FileUploadInfo> singleFileUploadInfos = files.Where(file => file.Length <= UploadLimitSizeInBytes)
                     .Select(file => new FileUploadInfo(
                         file,
                         GetPathInImageStore(absPkgPath, pkgPathInImageStore, file.FullName)));
 
+                // Get info to upload chunks for files.
+                var chunkInfos = new List<ChunkInfo>();
+                foreach (var file in files.Where(file => file.Length > UploadLimitSizeInBytes))
+                {
+                    string pathInImageStore = GetPathInImageStore(absPkgPath, pkgPathInImageStore, file.FullName);
+                    chunkInfos.AddRange(GetChunksInfoForFile(file, pathInImageStore));
+                }
+
+                // upload single files with up to MaxConcurrentUpload in parallel. 
                 await UploadAllSingleFiles(singleFileUploadInfos, requestId, serverTimeout, cancellationToken);
+
+                // upload chunks with up to MaxConcurrentUpload in parallel. 
+                await UploadAllChunksAsync(chunkInfos, requestId, serverTimeout, cancellationToken);
 
                 // upload _.dirs with up to MaxConcurrentUpload in parallel. 
                 await UploadDirectoryCompletionMarkerFiles(dirPathsInImageStore, requestId, serverTimeout, cancellationToken);
@@ -119,44 +123,32 @@ namespace Microsoft.ServiceFabric.Client.Http
             }
             else
             {
-                fileContentsToUpload.ThrowIfNull(nameof(fileContentsToUpload));
-                await UploadFileContent(() => new ByteArrayContent(fileContentsToUpload), pathInImageStore,
-                    requestId, serverTimeout, cancellationToken).ConfigureAwait(false);
-            }
-        }
+                pathInImageStore.ThrowIfNull(nameof(fileContentsToUpload));
+                pathInImageStore.ThrowIfNull(nameof(pathInImageStore));
+                serverTimeout?.ThrowIfOutOfInclusiveRange("serverTimeout", 1, 4294967295);
+                string url = "ImageStore/{pathInImageStore}";
+                url = url.Replace("{pathInImageStore}", Uri.EscapeDataString(pathInImageStore.ToString()));
+                requestId = requestId ?? Guid.NewGuid().ToString();
+                var queryParams = new List<string>();
 
-        async Task UploadFileContent(Func<HttpContent> content, string pathInImageStore, string requestId,
-            long? serverTimeout, CancellationToken cancellation)
-        {
-            pathInImageStore.ThrowIfNull(nameof(pathInImageStore));
-            serverTimeout?.ThrowIfOutOfInclusiveRange("serverTimeout", 1, 4294967295);
-            string url = "ImageStore/" + Uri.EscapeDataString(pathInImageStore);
-            requestId = requestId ?? Guid.NewGuid().ToString();
-            var queryParams = new List<string>();
-            serverTimeout?.AddToQueryParameters(queryParams, $"timeout={serverTimeout}");
-            queryParams.Add("api-version=6.0");
-            url += "?" + string.Join("&", queryParams);
+                // Append to queryParams if not null.
+                serverTimeout?.AddToQueryParameters(queryParams, $"timeout={serverTimeout}");
+                queryParams.Add("api-version=6.0");
+                url += "?" + string.Join("&", queryParams);
 
-            HttpRequestMessage request = null;
-            HttpRequestMessage RequestFunc()
-            {
-                request?.Dispose();
-                request = new HttpRequestMessage
+                HttpRequestMessage RequestFunc()
                 {
-                    Method = HttpMethod.Put,
-                    Content = content()
-                };
-                request.Content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
-                return request;
-            }
+                    var request = new HttpRequestMessage()
+                    {
+                        Method = HttpMethod.Put,
+                        Content = new ByteArrayContent(fileContentsToUpload),
+                    };
 
-            try
-            {
-                await httpClient.SendAsync(RequestFunc, url, requestId, cancellation).ConfigureAwait(false);
-            }
-            finally
-            {
-                request?.Dispose();
+                    request.Content.Headers.ContentType = MediaTypeHeaderValue.Parse("application/octet-stream");
+                    return request;
+                }
+
+                await httpClient.SendAsync(RequestFunc, url, requestId, cancellationToken);
             }
         }
 
@@ -197,6 +189,42 @@ namespace Microsoft.ServiceFabric.Client.Http
             return httpClient.SendAsync(RequestFunc, url, requestId, cancellationToken);
         }
 
+        static IEnumerable<ChunkInfo> GetChunksInfoForFile(System.IO.FileInfo fileInfo, string filePathInImageStore)
+        {
+            var chunkInfos = new List<ChunkInfo>();
+            var uploadSessionId = Guid.NewGuid();
+            var fileUploadInfo = new FileUploadInfo(fileInfo, filePathInImageStore);
+
+            long fileSize = fileInfo.Length;
+            long chunks = fileSize / UploadLimitSizeInBytes;
+            if (fileSize % UploadLimitSizeInBytes > 0)
+            {
+                chunks++;
+            }
+
+            long startPosition = 0;
+            for (long chunk = 1; chunk <= chunks; chunk++)
+            {
+                long endPosition = (UploadLimitSizeInBytes * chunk) - 1;
+
+                if (endPosition >= fileSize)
+                    endPosition = fileSize - 1;
+
+                chunkInfos.Add(
+                    new ChunkInfo
+                    {
+                        StartPosition = startPosition,
+                        EndPosition = endPosition,
+                        SessionId = uploadSessionId,
+                        FileUploadInfo = fileUploadInfo,
+                    });
+
+                startPosition = endPosition + 1;
+            }
+
+            return chunkInfos;
+        }
+
         static Task CompressApplicationPackage(string appPkgPath)
         {
             var dirsToCompress = new List<string>();
@@ -220,27 +248,88 @@ namespace Microsoft.ServiceFabric.Client.Http
                 Directory.Delete(sourceDirToCompress, true);
         }
 
-        internal static string GetPathInImageStore(string compressedPkgPath, string pkgPathInImageStore, string pathInCompressedPackage)
+        static string GetPathInImageStore(string compressedPkgPath, string pkgPathInImageStore, string pathInCompressedPackage)
         {
-            string relativePath = GetRelativePath(compressedPkgPath, pathInCompressedPackage).Replace(Path.DirectorySeparatorChar, '/');
+            string relativePath = pathInCompressedPackage.Replace(compressedPkgPath, string.Empty).Trim('\\', '/');
 
             return relativePath.Equals(string.Empty)
                 ? pkgPathInImageStore
-                : $"{pkgPathInImageStore}/{relativePath}";
+                : $"{pkgPathInImageStore}{Path.DirectorySeparatorChar}{relativePath}";
         }
 
-        static string GetRelativePath(string root, string path)
+        async Task UploadAllChunksAsync(ICollection<ChunkInfo> chunkInfos, Guid requestId, long? serverTimeout, CancellationToken cancellationToken)
         {
-            string normalizedRoot = Path.GetFullPath(root).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-            string normalizedPath = Path.GetFullPath(path);
-            StringComparison comparison = Path.DirectorySeparatorChar == '\\' ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
-            if (normalizedPath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar).Equals(normalizedRoot, comparison))
-                return string.Empty;
+            if (chunkInfos.Count > 0)
+            {
+                var chunkInfosBag = new ConcurrentBag<ChunkInfo>(chunkInfos);
+                var concurrentOperationsRunner = new ConcurrentOperationsRunner<ChunkInfo>(
+                    chunkInfo =>
+                        UploadChunkAsync(
+                            chunkInfo,
+                            requestId.ToString(),
+                            serverTimeout,
+                            cancellationToken),
+                    chunkInfosBag.TryTake,
+                    MaxConcurrentUpload);
 
-            string prefix = normalizedRoot + Path.DirectorySeparatorChar;
-            if (!normalizedPath.StartsWith(prefix, comparison))
-                throw new ArgumentException("The upload path must be inside its source directory.", nameof(path));
-            return normalizedPath.Substring(prefix.Length);
+                await concurrentOperationsRunner.RunAll();
+
+                var sessiodIds = new ConcurrentBag<Guid>();
+                foreach (var sessionId in chunkInfos.Select(x => x.SessionId).Distinct())
+                    sessiodIds.Add(sessionId);
+
+                // TODO: Before commiting check for missing chunlks and upload them again.
+
+                // commit all chunkuploads with up to MaxConcurrentUpload in parallel. 
+                var sessionIdCommits = new ConcurrentOperationsRunner<Guid>(
+                    sessionId =>
+                        httpClient.ImageStore.CommitImageStoreUploadSessionAsync(
+                            sessionId,
+                            serverTimeout: serverTimeout,
+                            cancellationToken: cancellationToken),
+                    sessiodIds.TryTake,
+                    MaxConcurrentUpload);
+
+                await sessionIdCommits.RunAll();
+            }
+        }
+
+        async Task UploadChunkAsync(ChunkInfo chunkInfo, string parentRequestId, long? serverTimeout, CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            // Get the chunk
+            long length = chunkInfo.EndPosition - chunkInfo.StartPosition + 1;
+            var chunk = new byte[length];
+
+            using (var streamSource = new FileStream(chunkInfo.FileUploadInfo.FileInfo.FullName, FileMode.Open, FileAccess.Read, FileShare.Read))
+            {
+                streamSource.Seek(chunkInfo.StartPosition, SeekOrigin.Begin);
+                await streamSource.ReadAsync(chunk, 0, (int)length, cancellationToken);
+            }
+
+            // retry once on network, timeout issues
+            int tryCount = 1;
+
+            try
+            {
+                await UploadFileChunkAsync(
+                    chunk,
+                    chunkInfo.FileUploadInfo.FilePathInImageStore,
+                    chunkInfo.SessionId,
+                    chunkInfo.StartPosition,
+                    chunkInfo.EndPosition,
+                    chunkInfo.FileUploadInfo.FileInfo.Length,
+                    $"{parentRequestId}:{Guid.NewGuid()}",
+                    serverTimeout,
+                    cancellationToken);
+            }
+            catch (ServiceFabricRequestException)
+            {
+                if (tryCount >= MaxUploadTry)
+                    throw;
+                tryCount++;
+            }
         }
 
         Task UploadAllSingleFiles(IEnumerable<FileUploadInfo> singleFileUploadInfos, Guid requestId, long? serverTimeout, CancellationToken cancellationToken)
@@ -249,8 +338,7 @@ namespace Microsoft.ServiceFabric.Client.Http
             var concurrentOperationsRunner = new ConcurrentOperationsRunner<FileUploadInfo>(
                 uploadInfo =>
                     UploadSingleFile(
-                        () => new StreamContent(new FileStream(uploadInfo.FileInfo.FullName, FileMode.Open,
-                            FileAccess.Read, FileShare.Read, 81920, FileOptions.Asynchronous | FileOptions.SequentialScan)),
+                        File.ReadAllBytes(uploadInfo.FileInfo.FullName),
                         uploadInfo.FilePathInImageStore,
                         requestId.ToString(),
                         serverTimeout,
@@ -267,7 +355,7 @@ namespace Microsoft.ServiceFabric.Client.Http
             var concurrentOperationsRunner = new ConcurrentOperationsRunner<string>(
                 dirPathInImageStore =>
                     UploadSingleFile(
-                        () => new ByteArrayContent(Array.Empty<byte>()),
+                        new byte[0],
                         $"{dirPathInImageStore}{Path.DirectorySeparatorChar}_.dir",
                         requestId.ToString(),
                         serverTimeout,
@@ -278,24 +366,26 @@ namespace Microsoft.ServiceFabric.Client.Http
             return concurrentOperationsRunner.RunAll();
         }
 
-        async Task UploadSingleFile(Func<HttpContent> content, string filePathInImageStore, string parentRequestId, long? serverTimeout, CancellationToken cancellationToken)
+        async Task UploadSingleFile(byte[] fileContent, string filePathInImageStore, string parentRequestId, long? serverTimeout, CancellationToken cancellationToken)
         {
-            for (int tryCount = 1; ; tryCount++)
+            // retry once on network, timeout issues
+            var tryCount = 1;
+
+            try
             {
-                try
-                {
-                    cancellationToken.ThrowIfCancellationRequested();
-                    await UploadFileContent(
-                        content,
-                        filePathInImageStore,
-                        $"{parentRequestId}:{Guid.NewGuid()}",
-                        serverTimeout,
-                        cancellationToken);
-                    return;
-                }
-                catch (ServiceFabricRequestException) when (tryCount < MaxUploadTry)
-                {
-                }
+                cancellationToken.ThrowIfCancellationRequested();
+                await UploadFileAsync(
+                    fileContent,
+                    filePathInImageStore,
+                    $"{parentRequestId}:{Guid.NewGuid()}",
+                    serverTimeout,
+                    cancellationToken);
+            }
+            catch (ServiceFabricRequestException)
+            {
+                if (tryCount >= MaxUploadTry)
+                    throw;
+                tryCount++;
             }
         }
 
@@ -310,6 +400,14 @@ namespace Microsoft.ServiceFabric.Client.Http
                     isLocalStore = true;
                 }
             }
+        }
+
+        class ChunkInfo
+        {
+            internal long StartPosition { get; set; }
+            internal long EndPosition { get; set; }
+            internal Guid SessionId { get; set; }
+            internal FileUploadInfo FileUploadInfo { get; set; }
         }
 
         class FileUploadInfo

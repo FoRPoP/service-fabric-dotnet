@@ -15,32 +15,32 @@ namespace Microsoft.ServiceFabric.Common
     /// This request replaces the mapping at the selected code package version and scope. Mappings for other versions are
     /// independent. It does not create a stack of prior patches at one target.
     /// </summary>
-    public partial class CodePackagePatchSetDescription
+    public partial class CodePackagePatchCreateDescription
     {
         /// <summary>
-        /// Initializes a new instance of the CodePackagePatchSetDescription class.
+        /// Initializes a new instance of the CodePackagePatchCreateDescription class.
         /// </summary>
         /// <param name="serviceName">The service used to identify the application instance and deployed code package.
         /// Package-wide scope can affect other services using that package.</param>
         /// <param name="codePackageName">The name of the code package defined in the service manifest.</param>
         /// <param name="codePackageVersion">The declared service-manifest version of the original code package to patch, not
         /// the replacement source version or internal rollout version.</param>
-        /// <param name="source">One complete replacement code package for this Set. Service Fabric uses the same contents for
-        /// every selected node.
-        /// The caller is responsible for compatibility with the selected nodes and existing launch settings. Use separate Set
-        /// operations when different contents are needed.
+        /// <param name="source">One complete replacement code package for this Create. Service Fabric uses the same contents
+        /// for every selected node.
+        /// The caller is responsible for compatibility with the selected nodes and existing launch settings. Use separate
+        /// Create operations when different contents are needed.
         /// </param>
         /// <param name="partitionId">Optional partition scope. Omit for package-wide scope. The partition must belong to
         /// ServiceName and use exclusive-process activation.</param>
         /// <param name="contentName">An optional safe name prefix for a new publication's ContentId. Service Fabric appends a
-        /// generated unique identifier. Omit for a generated identifier alone. For a local directory, the client applies this
-        /// prefix before uploading. Set does not reapply it or rename content already in the target application's retained
-        /// HotPatches layout, whether newly uploaded or previously published.</param>
+        /// generated unique identifier. Omit for a generated identifier alone. Create does not apply this prefix or rename
+        /// content already in the target application's retained HotPatches layout, whether newly uploaded or previously
+        /// published.</param>
         /// <param name="nodes">Nodes to target. Omit this property to resolve all currently-up nodes once for this call. An
         /// explicitly empty list is invalid. Duplicate names are removed.
         /// Use an explicit list when retrying so the recipient set does not change between attempts.
         /// </param>
-        public CodePackagePatchSetDescription(
+        public CodePackagePatchCreateDescription(
             ServiceName serviceName,
             string codePackageName,
             string codePackageVersion,
@@ -86,18 +86,17 @@ namespace Microsoft.ServiceFabric.Common
         public PartitionId PartitionId { get; }
 
         /// <summary>
-        /// Gets one complete replacement code package for this Set. Service Fabric uses the same contents for every selected
-        /// node.
-        /// The caller is responsible for compatibility with the selected nodes and existing launch settings. Use separate Set
-        /// operations when different contents are needed.
+        /// Gets one complete replacement code package for this Create. Service Fabric uses the same contents for every
+        /// selected node.
+        /// The caller is responsible for compatibility with the selected nodes and existing launch settings. Use separate
+        /// Create operations when different contents are needed.
         /// </summary>
         public CodePackagePatchSource Source { get; }
 
         /// <summary>
         /// Gets an optional safe name prefix for a new publication's ContentId. Service Fabric appends a generated unique
-        /// identifier. Omit for a generated identifier alone. For a local directory, the client applies this prefix before
-        /// uploading. Set does not reapply it or rename content already in the target application's retained HotPatches
-        /// layout, whether newly uploaded or previously published.
+        /// identifier. Omit for a generated identifier alone. Create does not apply this prefix or rename content already in
+        /// the target application's retained HotPatches layout, whether newly uploaded or previously published.
         /// </summary>
         public string ContentName { get; }
 
