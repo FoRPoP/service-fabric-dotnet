@@ -2401,8 +2401,8 @@
     </command:command>
     <command:command xmlns:maml="http://schemas.microsoft.com/maml/2004/10" xmlns:command="http://schemas.microsoft.com/maml/dev/command/2004/10" xmlns:dev="http://schemas.microsoft.com/maml/dev/2004/10" xmlns:MSHelp="http://msdn.microsoft.com/mshelp">
             <command:details>
-                <command:name>Confirm-SFClusterUpgrade</command:name>
-                <command:verb>Confirm</command:verb>
+                <command:name>Validate-SFClusterUpgrade</command:name>
+                <command:verb>Validate</command:verb>
                 <command:noun>ClusterUpgrade</command:noun>
                 <maml:description>
                     <maml:para>Validate and assess the impact of a code or configuration version update of a Service Fabric cluster.</maml:para>
